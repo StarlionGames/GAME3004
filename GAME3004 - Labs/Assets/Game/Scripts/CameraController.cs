@@ -29,7 +29,6 @@ public class CameraController : MonoBehaviour
         
         float mouseX = mouseBase.x * mouseSensitivity;
         float mouseY = mouseBase.y * mouseSensitivity;
-        Debug.Log(mouseX + " - " + mouseY);
 
         XRotation -= mouseY;
         XRotation = Mathf.Clamp(XRotation, -90.0f, 90.0f);
