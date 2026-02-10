@@ -1,25 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraController : MonoBehaviour
 {
-    public float mouseSensitivity = 100.0f;
+    public float mouseSensitivity = 1f;
     public Transform playerBody;
 
     private float XRotation = 0.0f;
 
+    PlayerInput p_Input;
+    InputAction mousePos;
+
     // Start is called before the first frame update
     void Start()
     {
+        p_Input = GetComponentInParent<PlayerInput>();
+        mousePos = p_Input.actions["Look"];
+
         Cursor.lockState = CursorLockMode.Locked;
     }
 
     // Update is called once per frame
     void Update()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        Vector2 mouseBase = mousePos.ReadValue<Vector2>();
+        
+        float mouseX = mouseBase.x * mouseSensitivity;
+        float mouseY = mouseBase.y * mouseSensitivity;
+        Debug.Log(mouseX + " - " + mouseY);
 
         XRotation -= mouseY;
         XRotation = Mathf.Clamp(XRotation, -90.0f, 90.0f);

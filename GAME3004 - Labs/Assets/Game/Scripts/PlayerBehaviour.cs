@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerBehaviour : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class PlayerBehaviour : MonoBehaviour
     public LayerMask groundMask;
     public bool isGrounded;
 
+    PlayerInput input => GetComponent<PlayerInput>();
 
     // Start is called before the first frame update
     void Start()
@@ -35,17 +37,6 @@ public class PlayerBehaviour : MonoBehaviour
             velocity.y = -2.0f;
         }
 
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-
-        Vector3 move = transform.right * x + transform.forward * z;
-        controller.Move(move * maxSpeed * Time.deltaTime);
-
-        if (Input.GetButton("Jump") && isGrounded)
-        {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravity);
-        }
-
         velocity.y += gravity * Time.deltaTime;
 
         controller.Move(velocity * Time.deltaTime);
@@ -55,5 +46,23 @@ public class PlayerBehaviour : MonoBehaviour
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(groundPoint.position, groundRadius);
+    }
+
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        if (!isGrounded || !context.performed) { return; }
+
+        velocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravity);
+    }
+
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        Vector2 input = context.ReadValue<Vector2>();
+        
+        float x = input.x;
+        float z = input.y;
+
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * maxSpeed * Time.deltaTime);
     }
 }
