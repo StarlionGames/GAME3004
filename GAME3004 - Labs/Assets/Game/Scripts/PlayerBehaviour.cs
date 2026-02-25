@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,8 +20,13 @@ public class PlayerBehaviour : MonoBehaviour
     public LayerMask groundMask;
     public bool isGrounded;
 
+    [Header("Status")]
+    public float health = 100;
+
     PlayerInput input => GetComponent<PlayerInput>();
     InputAction moveAction;
+
+    public static Action<float> onHealthChanged;
 
     // Start is called before the first frame update
     void Start()
@@ -56,6 +62,14 @@ public class PlayerBehaviour : MonoBehaviour
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(groundPoint.position, groundRadius);
+    }
+
+    private void OnTriggerEnter(Collider collision)
+    {
+        if (collision.CompareTag("Hazard")) {
+            health -= 10;
+            onHealthChanged.Invoke(health);
+        }
     }
 
     public void OnJump(InputAction.CallbackContext context)
