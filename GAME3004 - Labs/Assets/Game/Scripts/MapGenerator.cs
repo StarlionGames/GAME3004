@@ -21,6 +21,9 @@ public class MapGenerator : MonoBehaviour
     protected Dictionary<Vector3,GameObject> grid = new Dictionary<Vector3, GameObject>();
     bool regenerateGrid = false;
 
+    Vector3[] normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
+        Vector3.back, Vector3.right, Vector3.left};
+
     public static Action<GameObject> OnTileDestroyed;
 
     private void OnEnable()
@@ -104,9 +107,6 @@ public class MapGenerator : MonoBehaviour
 
     void DisableNonVisibleTiles()
     {
-        // disable the colliders and rendering of tiles with faces not shown
-        var normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
-        Vector3.back, Vector3.right, Vector3.left};
         List<GameObject> disabled = new List<GameObject>();
 
         foreach(var t in grid)
@@ -129,17 +129,23 @@ public class MapGenerator : MonoBehaviour
 
         grid.Remove(destroyedTile.transform.position);
         
-        var normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
-        Vector3.back, Vector3.right, Vector3.left};
-
-
+        foreach(var n in normalArray)
+        {
+            if (grid.ContainsKey(destroyedTile.transform.position + n))
+            {
+                TileProperties tile = grid[destroyedTile.transform.position + n].GetComponent<TileProperties>();
+                
+                if (tile._isVisible) { return; }
+                else
+                {
+                    tile.ModifyVisuals(true);
+                }
+            }
+        }
     }
 
     bool IsTileExposed(GameObject tile)
     {
-        var normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
-        Vector3.back, Vector3.right, Vector3.left};
-
         if (!grid.ContainsValue(tile)) { return false; }
 
         foreach(var n in normalArray)

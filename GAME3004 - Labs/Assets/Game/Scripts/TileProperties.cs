@@ -14,8 +14,6 @@ public class TileProperties : MonoBehaviour
         _position = pos;
     }
 
-
-
     public void OnDestroy()
     {
         MapGenerator.OnTileDestroyed?.Invoke(gameObject);
