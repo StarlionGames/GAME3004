@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
+using Random = UnityEngine.Random;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -16,9 +18,20 @@ public class MapGenerator : MonoBehaviour
     public GameObject tilePrefab;
     public Transform tileParent;
     
-    protected List<GameObject> grid = new List<GameObject>();
+    protected Dictionary<Vector3,GameObject> grid = new Dictionary<Vector3, GameObject>();
     bool regenerateGrid = false;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    public static Action<GameObject> OnTileDestroyed;
+
+    private void OnEnable()
+    {
+        OnTileDestroyed += EnableNeighbours;
+    }
+    private void OnDisable()
+    {
+        OnTileDestroyed -= EnableNeighbours;
+    }
+
     void Start()
     {
         Initialize();
@@ -28,8 +41,8 @@ public class MapGenerator : MonoBehaviour
     {
         if (startHeight != height || startWidth != width || startDepth != depth || startMin != min || startMax != max)
         {
-            Reset();
             regenerateGrid = true;
+            Reset();
         }
 
         if (regenerateGrid)
@@ -50,9 +63,9 @@ public class MapGenerator : MonoBehaviour
 
     private void Reset()
     {
-        foreach (GameObject t in grid )
+        foreach (var t in grid )
         {
-            Destroy(t);
+            Destroy(t.Value);
         }
         
         grid.Clear();
@@ -75,10 +88,14 @@ public class MapGenerator : MonoBehaviour
 
                     if (y< perlinNoise)
                     {
-                        var tile = Instantiate(tilePrefab, new Vector3(x, y, z), Quaternion.identity);
+                        Vector3 newPos = new Vector3 (x, y, z);
+                        
+                        var tile = Instantiate(tilePrefab, newPos, Quaternion.identity);
                         tile.transform.SetParent(tileParent);
 
-                        grid.Add(tile);
+                        tile.GetComponent<TileProperties>().Initialize(newPos);
+
+                        grid[newPos] = tile;
                     }
                 }
             }
@@ -92,29 +109,47 @@ public class MapGenerator : MonoBehaviour
         Vector3.back, Vector3.right, Vector3.left};
         List<GameObject> disabled = new List<GameObject>();
 
-        foreach(GameObject t in grid)
+        foreach(var t in grid)
         {
-            int collisionCount = 0;
-            for (int i = 0; i < normalArray.Length; i++)
+            if (!IsTileExposed(t.Value))
             {
-                if (Physics.Raycast(t.transform.position, normalArray[i], t.transform.localScale.magnitude * 0.5f))
-                {
-                    collisionCount++;
-                }
-            }
-            if (collisionCount > 5)
-            {
-                disabled.Add(t);
+                disabled.Add(t.Value);
             }
         }
 
         foreach(GameObject t in disabled)
         {
-            var boxCollider = t.GetComponent<BoxCollider>();
-            var meshRender = t.GetComponent<MeshRenderer>();
-
-            boxCollider.enabled = false;
-            meshRender.enabled = false;
+            t.GetComponent<TileProperties>().ModifyVisuals(false);
         }
+    }
+
+    void EnableNeighbours(GameObject destroyedTile)
+    {
+        if (regenerateGrid) { return; }
+
+        grid.Remove(destroyedTile.transform.position);
+        
+        var normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
+        Vector3.back, Vector3.right, Vector3.left};
+
+
+    }
+
+    bool IsTileExposed(GameObject tile)
+    {
+        var normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
+        Vector3.back, Vector3.right, Vector3.left};
+
+        if (!grid.ContainsValue(tile)) { return false; }
+
+        foreach(var n in normalArray)
+        {
+            if (!grid.ContainsKey(tile.transform.position + n))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -79,4 +79,9 @@ public class PlayerBehaviour : MonoBehaviour
             velocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravity);
         }
     }
+
+    private void DestroyPlayer()
+    {
+        
+    }
 }
