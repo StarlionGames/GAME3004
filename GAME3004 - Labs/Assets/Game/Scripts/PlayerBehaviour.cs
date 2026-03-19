@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 public class PlayerBehaviour : MonoBehaviour
 {
     public CharacterController controller;
+    public Animator animator;
 
     [Header("Movement Properties")]
     public float maxSpeed = 10.0f;
@@ -22,7 +23,7 @@ public class PlayerBehaviour : MonoBehaviour
 
     [Header("Status")]
     public float health = 100;
-
+  
     PlayerInput input => GetComponent<PlayerInput>();
     InputAction moveAction;
 
@@ -31,6 +32,7 @@ public class PlayerBehaviour : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
         controller = GetComponent<CharacterController>();
         moveAction = input.actions["Move"];
     }
@@ -80,8 +82,27 @@ public class PlayerBehaviour : MonoBehaviour
         }
     }
 
-    private void DestroyPlayer()
+    public void OnInteract(InputAction.CallbackContext context)
     {
-        
+        if (context.performed)
+        {
+            Debug.Log("Interact pressed");
+            animator.SetTrigger("Interacted");
+
+            // added a ray cast to make it more like minecraft haha
+            Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit, 100f, groundMask))
+            {
+                Debug.Log("hit " + hit.collider.gameObject.name);
+                DestroyTile(hit.collider.gameObject);
+            }
+        }
+    }
+
+    void DestroyTile(GameObject tile)
+    {
+        Destroy(tile);
     }
 }
