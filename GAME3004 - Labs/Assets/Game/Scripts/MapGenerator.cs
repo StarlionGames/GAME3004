@@ -21,8 +21,7 @@ public class MapGenerator : MonoBehaviour
     protected Dictionary<Vector3,GameObject> grid = new Dictionary<Vector3, GameObject>();
     bool regenerateGrid = false;
 
-    Vector3[] normalArray = new Vector3[] { Vector3.up, Vector3.down, Vector3.forward,
-        Vector3.back, Vector3.right, Vector3.left};
+    List<Vector3> normalArray = new List<Vector3>();
 
     public static Action<GameObject> OnTileDestroyed;
 
@@ -57,8 +56,24 @@ public class MapGenerator : MonoBehaviour
 
     void Initialize()
     {
+        normalArray.Clear();
+        
         startHeight = height; startWidth = width; startDepth = depth;
         startMin = min; startMax = max;
+
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int y = -1; y <= 1; y++)
+            {
+                for (int z = -1; z <= 1; z++)
+                {
+                    if (x == 0 && y == 0 && z == 0)
+                        continue; 
+
+                    normalArray.Add(new Vector3(x, y, z));
+                }
+            }
+        }
 
         Regenerate();
         DisableNonVisibleTiles();
@@ -96,9 +111,10 @@ public class MapGenerator : MonoBehaviour
                         var tile = Instantiate(tilePrefab, newPos, Quaternion.identity);
                         tile.transform.SetParent(tileParent);
 
-                        tile.GetComponent<TileProperties>().Initialize(newPos);
-
                         grid[newPos] = tile;
+
+                        TileTypes t = RandomAssignTileType(newPos, perlinNoise);
+                        tile.GetComponent<TileProperties>().Initialize(newPos,t);
                     }
                 }
             }
@@ -111,6 +127,11 @@ public class MapGenerator : MonoBehaviour
 
         foreach(var t in grid)
         {
+            if (IsTileExposed(t.Value))
+            {
+                AssignExposedAsGrass(t.Value);
+            }
+            
             if (!IsTileExposed(t.Value))
             {
                 disabled.Add(t.Value);
@@ -135,7 +156,7 @@ public class MapGenerator : MonoBehaviour
             {
                 TileProperties tile = grid[destroyedTile.transform.position + n].GetComponent<TileProperties>();
                 
-                if (tile._isVisible) { return; }
+                if (tile._isVisible) { continue; }
                 else
                 {
                     tile.ModifyVisuals(true);
@@ -157,5 +178,28 @@ public class MapGenerator : MonoBehaviour
         }
 
         return false;
+    }
+
+    TileTypes RandomAssignTileType(Vector3 pos, float perlin)
+    {
+        if (pos.y >= Mathf.FloorToInt(perlin)) return TileTypes.Grass;
+
+        if (pos.y<perlin - 2)
+        {
+            int ran = Random.Range(1, 100);
+
+            if (ran <= 3) { return TileTypes.Diamond; }
+            else if (ran <= 10) { return TileTypes.Gold; }
+            else if (ran <= 20) { return TileTypes.Iron; }
+            else if (ran <= 25) { return TileTypes.Coal; }
+        }
+
+        return TileTypes.Stone;
+    }
+
+    void AssignExposedAsGrass(GameObject tile)
+    {
+        tile.GetComponent<TileProperties>().tileType = TileTypes.Grass;
+        tile.GetComponent<TileProperties>().DetermineTypeVisuals();
     }
 }
